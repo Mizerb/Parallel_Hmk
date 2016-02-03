@@ -17,8 +17,11 @@
 /* Defines *****************************************************************/
 /***************************************************************************/
 
-#define ALIVE 1
+#define ALIVE 3
+#define TO_BE_ALIVE 1 
 #define DEAD  0
+#define TO_BE_DEAD 2
+
 #define INITAL_RNG_GAIN 0.4
 /***************************************************************************/
 /* Global Vars *************************************************************/
@@ -41,7 +44,7 @@ void allocate_and_init_cells();
 void compute_one_tick();
 void output_final_cell_state();
 void print_cells(FILE* stream); //general thing for error seaching
-unsigned int inital_RNG();
+unsigned int RNG_check(double gain);
 /***************************************************************************/
 /* Function: Main **********************************************************/
 /***************************************************************************/
@@ -113,7 +116,7 @@ void allocate_and_init_cells()
     g_GOL_CELL[i] = (unsigned int *)calloc(sizeof(unsigned int) , g_y_cell_size);
     for( j = 0; j < g_y_cell_size ; j++)
     {
-      g_GOL_CELL[i][j] = inital_RNG();
+      g_GOL_CELL[i][j] = RNG_check(INITAL_RNG_GAIN);
     }
   }
   return;   
@@ -132,6 +135,21 @@ void compute_one_tick()
   // Use drand48() for uniform distribution. It is already included in stdlib.h
 }
 
+void execute_tick()
+{
+  int i, j;
+  for( i = 0 ; i < g_x_cell_size ; i++)
+  {
+    for( j = 0; j < g_y_cell_size ; j++)
+    {
+      if(g_GOL_CELL[i][j] == TO_BE_ALIVE)
+        g_GOL_CELL[i][j] = ALIVE;
+        
+      else if(g_GOL_CELL[i][j] == TO_BE_DEAD)
+          g_GOL_CELL[i][j] = DEAD; 
+    }
+  }
+}
 
 /***************************************************************************/
 /* Function: output_final_cell_state ***************************************/
@@ -150,7 +168,7 @@ void output_final_cell_state()
 
 void print_cells(FILE *stream)
 {
-  int i,j;
+  int i,j, live_count=0;
   
   fprintf(stream, "  |" );
   for(i = 0 ; i < g_x_cell_size ; i++)
@@ -170,7 +188,8 @@ void print_cells(FILE *stream)
     fprintf(stream, "%d |", i);
     for( j = 0; j < g_x_cell_size ; j++)
     {
-      fprintf(stream," %u |" , g_GOL_CELL[j][i]); 
+      fprintf(stream," %u |" , g_GOL_CELL[j][i]);
+      live_count += g_GOL_CELL[j][i];
     }
     fprintf(stream,"\n---");
     for( j = 0; j < g_x_cell_size ; j++)
@@ -184,11 +203,11 @@ void print_cells(FILE *stream)
 
 
 /***************************************************************************/
-/* Function: inital_RNG ****************************************************/
+/* Function: RNG_check ****************************************************/
 /***************************************************************************/
 
-unsigned int inital_RNG()
+unsigned int RNG_check( double gain)
 {
-  return( drand48() < INITAL_RNG_GAIN );
+  return( drand48() < gain );
 }
 
