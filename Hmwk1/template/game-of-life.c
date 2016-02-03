@@ -76,14 +76,14 @@ void allocate_and_init_cells()
   int i, j;
   // use "calloc" to allocate space for your cell matrix
   // use "drand48" to init the state of each grid cell once allocated.
-  g_GOL_CEL = (unsigned int**)calloc(sizeof(unsigned int*) , g_x_cell_size);
+   g_GOL_CELL = (unsigned int**)calloc(sizeof(unsigned int*) , g_x_cell_size);
   
   for( i = 0 ; i < g_x_cell_size ; i++)
   {
-    g_GOL_CEL = (unsigned int *)calloc(sizeof(unsigned int) , g_y_cell_size);
+    g_GOL_CELL[i] = (unsigned int *)calloc(sizeof(unsigned int) , g_y_cell_size);
     for( j = 0; j < g_y_cell_size ; j++)
     {
-      g_GOL_CEL[i][j] = drand48();
+      g_GOL_CELL[i][j] = drand48();
     }
   }
   return;   
@@ -118,17 +118,29 @@ void output_final_cell_state()
 /* Function: print_cells ***************************************************/
 /***************************************************************************/
 
-void print_cells()
+void print_cells(FILE *stream)
 {
   int i,j;
   
+  fprintf(stream, "  |" );
+  for(i = 0 ; i < g_x_cell_size ; i++)
+  { 
+    fprintf(stream, " %d |", i);
+  }
   
   for( i = 0 ; i < g_y_cell_size ; i++)
   {
+    fprintf(stream, "%d |", i);
     for( j = 0; j < g_x_cell_size ; j++)
     {
-      printf("| %u |" , g_GOL_CEL[j][i]); 
+      fprintf(stream," %u |" , g_GOL_CELL[j][i]); 
     }
+    fprintf(stream,"\n---");
+    for( j = 0; j < g_x_cell_size ; i++)
+    {
+      fprintf(stream,"----");
+    }
+    fprintf(stream,"\n");
   }
 
 }
