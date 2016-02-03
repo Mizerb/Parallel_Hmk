@@ -40,7 +40,7 @@ double g_thresh_hold=0.0;
 void allocate_and_init_cells();
 void compute_one_tick();
 void output_final_cell_state();
-void print_cells(); //general thing for error seaching
+void print_cells(FILE* stream); //general thing for error seaching
 /***************************************************************************/
 /* Function: Main **********************************************************/
 /***************************************************************************/
@@ -54,8 +54,14 @@ int main(int argc, char *argv[])
   // Argument 2 is the number of ticks
   // Argument 3 is the thresh hold percent 0%, 25%, 50%, 75% and 90%.
   // Convert strings to integer values using "atoi()"
+  //if( argc != 4) return 1;
+  
+  g_x_cell_size=4;
+  g_y_cell_size=4;
 
   allocate_and_init_cells();
+
+  print_cells(stderr);
 
   for(i = 0; i < g_num_ticks; i++)
     {
@@ -127,8 +133,15 @@ void print_cells(FILE *stream)
   { 
     fprintf(stream, " %d |", i);
   }
-  
-  for( i = 0 ; i < g_y_cell_size ; i++)
+  fprintf(stream, "\n---");
+ 
+  for( j = 0; j < g_x_cell_size ; j++)
+  {
+    fprintf(stream,"----");
+  }
+  fprintf(stream,"\n"); 
+ 
+   for( i = 0 ; i < g_y_cell_size ; i++)
   {
     fprintf(stream, "%d |", i);
     for( j = 0; j < g_x_cell_size ; j++)
@@ -136,7 +149,7 @@ void print_cells(FILE *stream)
       fprintf(stream," %u |" , g_GOL_CELL[j][i]); 
     }
     fprintf(stream,"\n---");
-    for( j = 0; j < g_x_cell_size ; i++)
+    for( j = 0; j < g_x_cell_size ; j++)
     {
       fprintf(stream,"----");
     }
