@@ -55,10 +55,33 @@ int main(int argc, char *argv[])
   // Argument 2 is the number of ticks
   // Argument 3 is the thresh hold percent 0%, 25%, 50%, 75% and 90%.
   // Convert strings to integer values using "atoi()"
-  //if( argc != 4) return 1;
+  if( argc != 4) return 1;
   
-  g_x_cell_size=4;
-  g_y_cell_size=4;
+  g_x_cell_size= (unsigned)atoi(argv[1]);
+  g_y_cell_size=g_x_cell_size;
+  if( g_x_cell_size < 1 )
+  {
+    printf("Size of map needs to be greater than 1\n");
+    return 1;
+  }
+
+  if( (g_num_ticks = (unsigned)atoi(argv[2]) ) < 1 )
+  {
+    printf("At least 1 tick\n");
+    return 1;
+  }
+
+  i = atoi(argv[3]);
+  if( i < 0 )
+  {
+    printf("survival thresh hold must be at least 0%%\n");
+    return 1;
+  }
+  
+  g_thresh_hold = (double) (i/100.0);
+
+// END OF DEALING WITH ARGS
+//=========================================================================  
 
   allocate_and_init_cells();
 
