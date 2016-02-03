@@ -1,6 +1,6 @@
 /***************************************************************************/
 /* Template for Asssignment 1 **********************************************/
-/* Your Name Here             **********************************************/
+/* Benjamin Andrew Mizera     **********************************************/
 /***************************************************************************/
 
 /***************************************************************************/
@@ -40,7 +40,7 @@ double g_thresh_hold=0.0;
 void allocate_and_init_cells();
 void compute_one_tick();
 void output_final_cell_state();
-
+void print_cells(); //general thing for error seaching
 /***************************************************************************/
 /* Function: Main **********************************************************/
 /***************************************************************************/
@@ -73,13 +73,28 @@ int main(int argc, char *argv[])
 
 void allocate_and_init_cells()
 {
+  int i, j;
   // use "calloc" to allocate space for your cell matrix
   // use "drand48" to init the state of each grid cell once allocated.
+  g_GOL_CEL = (unsigned int**)calloc(sizeof(unsigned int*) , g_x_cell_size);
+  
+  for( i = 0 ; i < g_x_cell_size ; i++)
+  {
+    g_GOL_CEL = (unsigned int *)calloc(sizeof(unsigned int) , g_y_cell_size);
+    for( j = 0; j < g_y_cell_size ; j++)
+    {
+      g_GOL_CEL[i][j] = drand48();
+    }
+  }
+  return;   
 }
 
 /***************************************************************************/
 /* Function: compute_one_tick **********************************************/
 /***************************************************************************/
+
+void calculate_tick();
+void execute_tick();
 
 void compute_one_tick()
 {
@@ -97,3 +112,24 @@ void output_final_cell_state()
   // print out in grid form 16 value per row of the g_GOL_CELL
   // This data will be used to create your graphs
 }
+
+
+/***************************************************************************/
+/* Function: print_cells ***************************************************/
+/***************************************************************************/
+
+void print_cells()
+{
+  int i,j;
+  
+  
+  for( i = 0 ; i < g_y_cell_size ; i++)
+  {
+    for( j = 0; j < g_x_cell_size ; j++)
+    {
+      printf("| %u |" , g_GOL_CEL[j][i]); 
+    }
+  }
+
+}
+
