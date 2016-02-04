@@ -140,7 +140,7 @@ void compute_one_tick()
 
 void calculate_tick()
 {
-  int i , j, count;
+  int i , j;
   for(i = 0; i < g_x_cell_size; i++)
   {
     for(j = 0; j < g_y_cell_size; j++)
@@ -153,6 +153,7 @@ void calculate_tick()
 int look_around(int x, int y)
 {
   int count = 0; 
+/*
   if (x > 0)
     if(g_GOL_CELL[x-1][y] > 1) count++;
   if (y > 0)
@@ -161,7 +162,7 @@ int look_around(int x, int y)
     if(g_GOL_CELL[x+1][y] > 1) count++;
   if(y < g_y_cell_size -2)
     if(g_GOL_CELL[x][y+1] > 1) count++;
- 
+*/
   int i , j; 
   for(i = x-1; i<x+1 ; i++ )
   {
@@ -170,13 +171,24 @@ int look_around(int x, int y)
     {
       if( j < 1 || j > g_y_cell_size -1 ) continue;
       if( i == x && j == y ) continue;
-       
+      if( g_GOL_CELL[i][j] >1 ) count++;
     }
   }
-
-
-
+  if( g_GOL_CELL[x][y] == ALIVE )
+  {
+    if ( count < 2 || count > 3) return TO_BE_DEAD;
+    else return ALIVE;
+  }
+  else if( g_GOL_CELL[x][y] == DEAD && count==3) return TO_BE_ALIVE;
+  else if( g_GOL_CELL[x][y] == DEAD) return DEAD;
+  else{
+    fprintf( stderr , "ENCOUNTERED ERROR AT [%d][%d]\n", x , y);
+    print_cells(stderr);
+    exit(1);
+  }
+  return -1;
 }
+
 
 
 void execute_tick()
