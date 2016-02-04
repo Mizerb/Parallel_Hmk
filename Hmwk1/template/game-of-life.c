@@ -128,12 +128,56 @@ void allocate_and_init_cells()
 
 void calculate_tick();
 void execute_tick();
+int look_around( int x , int y);
 
 void compute_one_tick()
 {
   // iterate over X (outside loop) and Y (inside loop) dimensions of the g_GOL_CELL
   // Use drand48() for uniform distribution. It is already included in stdlib.h
+  
+
 }
+
+void calculate_tick()
+{
+  int i , j, count;
+  for(i = 0; i < g_x_cell_size; i++)
+  {
+    for(j = 0; j < g_y_cell_size; j++)
+    {
+      g_GOL_CELL[i][j] = look_around(i,j);
+    }
+  }
+}
+
+int look_around(int x, int y)
+{
+  int count = 0; 
+  if (x > 0)
+    if(g_GOL_CELL[x-1][y] > 1) count++;
+  if (y > 0)
+    if(g_GOL_CELL[x][y-1] > 1) count++;
+  if(x < g_x_cell_size -2)
+    if(g_GOL_CELL[x+1][y] > 1) count++;
+  if(y < g_y_cell_size -2)
+    if(g_GOL_CELL[x][y+1] > 1) count++;
+ 
+  int i , j; 
+  for(i = x-1; i<x+1 ; i++ )
+  {
+    if( i == 0 || g_x_cell_size -1 == i ) continue;
+    for( j = y-1 ; j< y+1 ; j++)
+    {
+      if( j < 1 || j > g_y_cell_size -1 ) continue;
+      if( i == x && j == y ) continue;
+       
+    }
+  }
+
+
+
+}
+
 
 void execute_tick()
 {
