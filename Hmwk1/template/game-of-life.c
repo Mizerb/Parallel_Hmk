@@ -245,7 +245,7 @@ void print_cells(FILE *stream)
 
 if( LINED == 1)
 {   
-  fprintf(stream, "  |" );
+  fprintf(stream, "\n\n  |" );
   for(i = 0 ; i < g_x_cell_size ; i++)
   { 
     fprintf(stream, " %d |", i);
@@ -263,7 +263,9 @@ if( LINED == 1)
     fprintf(stream, "%d |", i);
     for( j = 0; j < g_x_cell_size ; j++)
     {
-      fprintf(stream," %u |" , g_GOL_CELL[j][i]);
+      char printz = '1';
+      if( g_GOL_CELL[i][j] == ALIVE ) printz = '0';
+      fprintf(stream," %c |" , printz);
       live_count += g_GOL_CELL[j][i];
     }
     fprintf(stream,"\n---");
@@ -278,18 +280,14 @@ if( LINED == 1)
 
   fprintf(stream,"\n\n"); 
  
-   for( i = 0 ; i < g_y_cell_size ; i++)
+  for( i = 0 ; i < g_y_cell_size ; i++)
   {
-    fprintf(stream, "%d |", i);
     for( j = 0; j < g_x_cell_size ; j++)
     {
-      fprintf(stream," %u |" , g_GOL_CELL[j][i]);
+      char printz = ' ';
+      if( g_GOL_CELL[i][j] == ALIVE ) printz = 'X';
+      fprintf(stream,"%c" , printz);
       live_count += g_GOL_CELL[j][i];
-    }
-    fprintf(stream,"\n---");
-    for( j = 0; j < g_x_cell_size ; j++)
-    {
-      fprintf(stream,"----");
     }
     fprintf(stream,"\n");
   }
