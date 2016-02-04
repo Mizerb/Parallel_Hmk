@@ -22,7 +22,7 @@
 #define DEAD  0
 #define TO_BE_DEAD 2
 
-#define INITAL_RNG_GAIN 0.4
+#define INITAL_RNG_GAIN 0.2
 /***************************************************************************/
 /* Global Vars *************************************************************/
 /***************************************************************************/
@@ -58,7 +58,11 @@ int main(int argc, char *argv[])
   // Argument 2 is the number of ticks
   // Argument 3 is the thresh hold percent 0%, 25%, 50%, 75% and 90%.
   // Convert strings to integer values using "atoi()"
-  if( argc != 4) return 1;
+  if( argc != 4)
+  {
+    printf("Incorrect number of args. You know what you did\n");
+    return 1;
+  }
   
   g_x_cell_size= (unsigned)atoi(argv[1]);
   g_y_cell_size=g_x_cell_size;
@@ -96,7 +100,7 @@ int main(int argc, char *argv[])
     }
 
   output_final_cell_state();
-
+  print_cells(stdout);
   return 0;
 }
 
@@ -134,7 +138,9 @@ void compute_one_tick()
 {
   // iterate over X (outside loop) and Y (inside loop) dimensions of the g_GOL_CELL
   // Use drand48() for uniform distribution. It is already included in stdlib.h
-  
+  calculate_tick();
+  //Insert Safty Error Check HERE
+  execute_tick(); 
 
 }
 
@@ -163,28 +169,38 @@ int look_around(int x, int y)
   if(y < g_y_cell_size -2)
     if(g_GOL_CELL[x][y+1] > 1) count++;
 */
+
   int i , j; 
-  for(i = x-1; i<x+1 ; i++ )
+  //printf( " HERE AT [%d][%d] " , x, y);
+  for(i = x-1; i<x+2 ; i++ )
   {
-    if( i == 0 || g_x_cell_size -1 == i ) continue;
-    for( j = y-1 ; j< y+1 ; j++)
+    //printf(" LOOKING AT [%d][%d] \n" , i , j);
+    if( i <  0  ||  g_x_cell_size -1 <  i ) continue;
+    for( j = y-1 ; j< y+2 ; j++)
     {
-      if( j < 1 || j > g_y_cell_size -1 ) continue;
+      //printf(" I'm IN [%d][%d] \n" , i , j);
+      if( j < 0 || j > g_y_cell_size -1 ) continue;
       if( i == x && j == y ) continue;
-      if( g_GOL_CELL[i][j] >1 ) count++;
+      //printf( "CHECKING [%d][%d]  where i = %d and j = %d \n" , i , j , x , y);
+      if( g_GOL_CELL[i][j] > 1 ) count++;
     }
   }
+  //printf("\n");
+  //exit(1);
   if( g_GOL_CELL[x][y] == ALIVE )
   {
     if ( count < 2 || count > 3) return TO_BE_DEAD;
     else return ALIVE;
   }
-  else if( g_GOL_CELL[x][y] == DEAD && count==3) return TO_BE_ALIVE;
-  else if( g_GOL_CELL[x][y] == DEAD) return DEAD;
+  else if( g_GOL_CELL[x][y] == DEAD)
+  {
+    if( count ==3 ) return TO_BE_ALIVE;
+    else return DEAD;
+  }
   else{
-    fprintf( stderr , "ENCOUNTERED ERROR AT [%d][%d]\n", x , y);
+    fprintf( stderr , "ENCOUNTERED ERROR AT [%d][%d]==%d \n", x , y, g_GOL_CELL[x][y]);
     print_cells(stderr);
-    exit(1);
+    abort();
   }
   return -1;
 }
@@ -264,6 +280,6 @@ void print_cells(FILE *stream)
 
 unsigned int RNG_check( double gain)
 {
-  return( drand48() < gain );
+  return( drand48() < gain )*ALIVE;
 }
 
