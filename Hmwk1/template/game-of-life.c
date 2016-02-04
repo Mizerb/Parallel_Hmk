@@ -23,6 +23,7 @@
 #define TO_BE_DEAD 2
 
 #define INITAL_RNG_GAIN 0.2
+#define LINED 0
 /***************************************************************************/
 /* Global Vars *************************************************************/
 /***************************************************************************/
@@ -241,7 +242,9 @@ void output_final_cell_state()
 void print_cells(FILE *stream)
 {
   int i,j, live_count=0;
-  
+
+if( LINED == 1)
+{   
   fprintf(stream, "  |" );
   for(i = 0 ; i < g_x_cell_size ; i++)
   { 
@@ -270,6 +273,31 @@ void print_cells(FILE *stream)
     }
     fprintf(stream,"\n");
   }
+  return;
+}
+
+  fprintf(stream,"\n\n"); 
+ 
+   for( i = 0 ; i < g_y_cell_size ; i++)
+  {
+    fprintf(stream, "%d |", i);
+    for( j = 0; j < g_x_cell_size ; j++)
+    {
+      fprintf(stream," %u |" , g_GOL_CELL[j][i]);
+      live_count += g_GOL_CELL[j][i];
+    }
+    fprintf(stream,"\n---");
+    for( j = 0; j < g_x_cell_size ; j++)
+    {
+      fprintf(stream,"----");
+    }
+    fprintf(stream,"\n");
+  }
+  return;
+
+
+
+
 
 }
 
