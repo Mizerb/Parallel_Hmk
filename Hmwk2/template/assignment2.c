@@ -149,6 +149,9 @@ int main(int argc, char *argv[])
         printf( "TIME : %f sec\n" , end_time- start_time);
     }
 /* PRINTING */
+
+// I'm doing it this way because I'm both lazy
+//  and effective. Why should I bother to paste things together by hand?    
     FILE * of = NULL;
 
     if( g_mpi_myrank != MASTER)
