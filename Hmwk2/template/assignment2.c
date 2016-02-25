@@ -48,6 +48,7 @@ unsigned int g_num_ticks=0;
 double g_thresh_hold=0.0;
 
 int g_mpi_myrank;
+int g_world_size;
 
 /***************************************************************************/
 /* Function Decs ***********************************************************/
@@ -60,6 +61,7 @@ void output_final_cell_state();
 void print_cells(FILE* stream); //general thing for error seaching
 
 void random_setting();
+void transfer_ghosts();
 void calculate_tick();
 void execute_tick();
 unsigned char look_around( int x , int y);
@@ -76,6 +78,7 @@ int main(int argc, char *argv[])
     int mpi_myrank;
     int mpi_commsize;
     int i;
+    double start_time =0, end_time;
 // Example MPI startup and using CLCG4 RNG
     MPI_Init( &argc, &argv);
     MPI_Comm_size( MPI_COMM_WORLD, &mpi_commsize);
@@ -87,10 +90,9 @@ int main(int argc, char *argv[])
 // Note, use the mpi_myrank to select which RNG stream to use. 
     printf("Rank %d of %d has been started and a first Random Value of %lf\n", 
 	   mpi_myrank, mpi_commsize, GenVal(mpi_myrank));
-    
-    MPI_Barrier( MPI_COMM_WORLD );
 // Bring over rest from your code
     g_mpi_myrank = mpi_myrank;
+    g_world_size = mpi_commsize;
 
 // DEAL WITH ARGS
     if( argc != 4)
@@ -128,16 +130,24 @@ int main(int argc, char *argv[])
     printf( "TOTAL SIZE: %u \n g_y_cell_size: %u\n g_x_cell_size %u\nGenVal(mpi_myrank):%lf\n",
         mpi_commsize, g_y_cell_size , g_x_cell_size , GenVal(mpi_myrank));
 */
-
-
+    
+    MPI_Barrier( MPI_COMM_WORLD );
 /* EXECUTION */
-
+    if( MASTER == mpi_myrank ) start_time = MPI_Wtime();
     allocate_and_init_cells();
 
+    for( i = 0 ; i< g_num_ticks ; i++)
+    {
+        compute_one_tick();
+    }
 
 
-
-
+    MPI_Barrier( MPI_COMM_WORLD );
+    if( MASTER == mpi_myrank )
+    {
+        end_time = MPI_Wtime();
+        printf( "TIME : %f sec\n" , end_time- start_time);
+    }
 /* PRINTING */
     FILE * of = NULL;
 
@@ -185,7 +195,7 @@ void allocate_and_init_cells()
   // use "drand48" to init the state of each grid cell once allocated.
   g_GOL_CELL = (unsigned char**)calloc(sizeof(unsigned char*) , g_x_cell_size+2);
   
-  for( i = 1 ; i < g_x_cell_size+1 ; i++)
+  for( i = 0 ; i < g_x_cell_size+2 ; i++)
   {
     g_GOL_CELL[i] = (unsigned char *)calloc(sizeof(unsigned char) , g_y_cell_size);
     for( j = 0; j < g_y_cell_size ; j++)
@@ -204,11 +214,12 @@ void compute_one_tick()
   if( g_mpi_myrank == MASTER) random = RNG_check( g_thresh_hold);
   MPI_Bcast(&random , 1, MPI_INT , MASTER , MPI_COMM_WORLD);
 
-  if(random)
+  if( random )
   {
     random_setting();
     return;
-  } 
+  }
+  transfer_ghosts();
   calculate_tick();
   //Insert Safty Error Check HERE
   execute_tick(); 
@@ -225,6 +236,37 @@ void random_setting()
       g_GOL_CELL[i][j] = RNG_check(g_thresh_hold);
     }
   }
+}
+
+void transfer_ghosts()
+{
+    int tag = g_mpi_myrank*2;
+    MPI_Request R_Top_S, R_Top_R, R_Bot_S, R_Bot_R;
+    MPI_Status  S_Top, S_Bot;
+    //TOP SIDE
+    if( g_mpi_myrank != MASTER )
+    {
+        MPI_Irecv( g_GOL_CELL[0], g_y_cell_size , MPI_UNSIGNED_CHAR ,
+            g_mpi_myrank-1, tag-1, MPI_COMM_WORLD , &R_Top_R );
+
+        MPI_Isend( g_GOL_CELL[1], g_y_cell_size , MPI_UNSIGNED_CHAR ,
+            g_mpi_myrank-1, tag-1 , MPI_COMM_WORLD , &R_Top_S);
+    }
+
+    //BOTTOM SIDE
+    if( g_mpi_myrank < g_world_size-1 )
+    {
+        MPI_Irecv( g_GOL_CELL[ g_x_cell_size +1], g_y_cell_size , MPI_UNSIGNED_CHAR ,
+            g_mpi_myrank+1, tag+1, MPI_COMM_WORLD , &R_Bot_R );
+
+        MPI_Isend( g_GOL_CELL[g_x_cell_size], g_y_cell_size , MPI_UNSIGNED_CHAR ,
+            g_mpi_myrank+1, tag+1, MPI_COMM_WORLD , &R_Bot_S);
+    }
+
+    if(g_mpi_myrank != MASTER )
+        MPI_Wait( &R_Top_R , &S_Top);
+    if(g_mpi_myrank != g_world_size -1 )
+        MPI_Wait( &R_Bot_R , &S_Bot);
 }
 
 void calculate_tick()
@@ -258,12 +300,12 @@ unsigned char look_around(int x, int y)
   for(i = x-1; i<x+2 ; i++ )
   {
     //printf(" LOOKING AT [%d][%d] \n" , i , j);
-    if( i <  0  ||  g_x_cell_size -1 <  i ) continue;
+    if( i <  0  ||  g_x_cell_size -1 <  i ) continue; //Safty Measure. 
     for( j = y-1 ; j< y+2 ; j++)
     {
       //printf(" I'm IN [%d][%d] \n" , i , j);
-      if( j < 0 || j > g_y_cell_size -1 ) continue;
-      if( i == x && j == y ) continue;
+      if( j < 0 || j > g_y_cell_size -1 ) continue; // Again, Safty Measure
+      if( i == x && j == y ) continue;              // I am a defensive Coder
       //printf( "CHECKING [%d][%d]  where i = %d and j = %d \n" , i , j , x , y);
       if( g_GOL_CELL[i][j] > 1 ) count++;
     }
@@ -290,9 +332,9 @@ unsigned char look_around(int x, int y)
 
 
 
-void execute_tick()
-{
-  int i, j;
+void execute_tick() // This exists from HMWK 1. The Homework specifies all changes occur
+{                   // at the same time, this ensures that, by making the change in state
+  int i, j;         // occur at a singular moment. 
   for( i = 0 ; i < g_x_cell_size+1 ; i++)
   {
     for( j = 0; j < g_y_cell_size ; j++)
@@ -346,7 +388,7 @@ if( LINED == 1)
 }
 
   //fprintf(stream,"\n\n"); 
-  printf( "X: %u , Y: %u \n", g_x_cell_size , g_y_cell_size);
+  //printf( "X: %u , Y: %u \n", g_x_cell_size , g_y_cell_size);
   for( i = 1 ; i < g_x_cell_size+1 ; i++)
   {
     for( j = 0; j < g_y_cell_size ; j++)
