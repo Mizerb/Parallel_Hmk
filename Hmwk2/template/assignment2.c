@@ -25,7 +25,7 @@
 #define DEAD  0
 #define TO_BE_DEAD 2
 
-#define INITAL_RNG_GAIN 0.2
+#define INITAL_RNG_GAIN 0.5
 #define LINED 0
 
 #define MASTER 0
@@ -59,7 +59,7 @@ void compute_one_tick();
 void output_final_cell_state();
 void print_cells(FILE* stream); //general thing for error seaching
 
-
+void random_setting();
 void calculate_tick();
 void execute_tick();
 unsigned char look_around( int x , int y);
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     
 // Note, use the mpi_myrank to select which RNG stream to use. 
     printf("Rank %d of %d has been started and a first Random Value of %lf\n", 
-	   argc, mpi_commsize, GenVal(mpi_myrank));
+	   mpi_myrank, mpi_commsize, GenVal(mpi_myrank));
     
     MPI_Barrier( MPI_COMM_WORLD );
 // Bring over rest from your code
@@ -130,6 +130,43 @@ int main(int argc, char *argv[])
 */
 
 
+/* EXECUTION */
+
+    allocate_and_init_cells();
+
+
+
+
+
+/* PRINTING */
+    FILE * of = NULL;
+
+    if( g_mpi_myrank != MASTER)
+    {
+        MPI_Recv(&i , 1 , MPI_INT , mpi_myrank-1 , 0, 
+          MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+        
+        of = fopen("OUT.log" , "a");
+    }else{ of = fopen( "OUT.log" , "w"); }
+     
+    if( of == NULL )
+    {
+        printf( "Couldn't open file\n");
+        MPI_Finalize();
+        exit(1);
+    }
+
+    //fprintf(of," HELLO FROM %u\n" , g_mpi_myrank); 
+    
+    //printf("HELLO FROM %u\n", g_mpi_myrank);
+    print_cells(of);
+    fclose(of);
+    
+    if( g_mpi_myrank != mpi_commsize -1)
+    {
+        MPI_Send(&i , 1 , MPI_INT, mpi_myrank+1 , 0, MPI_COMM_WORLD);
+    }
+    
 
 // END -Perform a barrier and then leave MPI
     MPI_Barrier( MPI_COMM_WORLD );
@@ -148,7 +185,7 @@ void allocate_and_init_cells()
   // use "drand48" to init the state of each grid cell once allocated.
   g_GOL_CELL = (unsigned char**)calloc(sizeof(unsigned char*) , g_x_cell_size+2);
   
-  for( i = 1 ; i < g_x_cell_size ; i++)
+  for( i = 1 ; i < g_x_cell_size+1 ; i++)
   {
     g_GOL_CELL[i] = (unsigned char *)calloc(sizeof(unsigned char) , g_y_cell_size);
     for( j = 0; j < g_y_cell_size ; j++)
@@ -163,6 +200,15 @@ void compute_one_tick()
 {
   // iterate over X (outside loop) and Y (inside loop) dimensions of the g_GOL_CELL
   // Use drand48() for uniform distribution. It is already included in stdlib.h
+  int random;
+  if( g_mpi_myrank == MASTER) random = RNG_check( g_thresh_hold);
+  MPI_Bcast(&random , 1, MPI_INT , MASTER , MPI_COMM_WORLD);
+
+  if(random)
+  {
+    random_setting();
+    return;
+  } 
   calculate_tick();
   //Insert Safty Error Check HERE
   execute_tick(); 
@@ -172,7 +218,7 @@ void compute_one_tick()
 void random_setting()
 {
   int i , j;
-  for(i = 1; i < g_x_cell_size; i++)
+  for(i = 1; i < g_x_cell_size+1; i++)
   {
     for(j = 0; j < g_y_cell_size; j++)
     {
@@ -184,7 +230,7 @@ void random_setting()
 void calculate_tick()
 {
   int i , j;
-  for(i = 1; i < g_x_cell_size; i++)
+  for(i = 1; i < g_x_cell_size+1; i++)
   {
     for(j = 0; j < g_y_cell_size; j++)
     {
@@ -247,7 +293,7 @@ unsigned char look_around(int x, int y)
 void execute_tick()
 {
   int i, j;
-  for( i = 0 ; i < g_x_cell_size ; i++)
+  for( i = 0 ; i < g_x_cell_size+1 ; i++)
   {
     for( j = 0; j < g_y_cell_size ; j++)
     {
@@ -258,6 +304,61 @@ void execute_tick()
           g_GOL_CELL[i][j] = DEAD; 
     }
   }
+}
+
+void print_cells(FILE *stream)
+{
+  int i,j, live_count=0;
+
+if( LINED == 1)
+{   
+  fprintf(stream, "\n\n  |" );
+  for(i = 0 ; i < g_x_cell_size+1 ; i++)
+  { 
+    fprintf(stream, " %d |", i);
+  }
+  fprintf(stream, "\n---");
+ 
+  for( j = 0; j < g_x_cell_size+1 ; j++)
+  {
+    fprintf(stream,"----");
+  }
+  fprintf(stream,"\n"); 
+ 
+   for( i = 0 ; i < g_y_cell_size ; i++)
+  {
+    fprintf(stream, "%d |", i);
+    for( j = 0; j < g_x_cell_size+1 ; j++)
+    {
+      char printz = '1';
+      if( g_GOL_CELL[i][j] == ALIVE ) printz = '0';
+      fprintf(stream," %c |" , printz);
+      live_count += g_GOL_CELL[j][i];
+    }
+    fprintf(stream,"\n---");
+    for( j = 0; j < g_x_cell_size+1 ; j++)
+    {
+      fprintf(stream,"----");
+    }
+    fprintf(stream,"\n");
+  }
+  return;
+}
+
+  //fprintf(stream,"\n\n"); 
+  printf( "X: %u , Y: %u \n", g_x_cell_size , g_y_cell_size);
+  for( i = 1 ; i < g_x_cell_size+1 ; i++)
+  {
+    for( j = 0; j < g_y_cell_size ; j++)
+    {
+      char printz = ' ';
+      if( g_GOL_CELL[i][j] == ALIVE ) printz = 'X';
+      fprintf(stream,"%c" , printz);
+      live_count += g_GOL_CELL[j][i];
+    }
+    fprintf(stream,"\n");
+  }
+  return;
 }
 
 unsigned int RNG_check( double gain)
