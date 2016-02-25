@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 /* PRINTING */
 
 // I'm doing it this way because I'm both lazy
-//  and effective. Why should I bother to paste things together by hand?    
+//  and effective. Why should I bother to paste things together    
     FILE * of = NULL;
 
     if( g_mpi_myrank != MASTER)
@@ -236,7 +236,7 @@ void random_setting()
   {
     for(j = 0; j < g_y_cell_size; j++)
     {
-      g_GOL_CELL[i][j] = RNG_check(g_thresh_hold);
+      g_GOL_CELL[i][j] = RNG_check(.5);
     }
   }
 }
